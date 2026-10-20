@@ -1,0 +1,22 @@
+# ===================================================================
+# Employee Leave & Workforce Availability Platform Configuration Template
+# Copy this file to application.properties and customize for your environment.
+# ===================================================================
+
+spring.application.name=employee-leave
+
+# MySQL Database Connectivity
+spring.datasource.url=${SPRING_DATASOURCE_URL:jdbc:mysql://127.0.0.1:3306/employee_leave_db}
+spring.datasource.username=${SPRING_DATASOURCE_USERNAME:root}
+spring.datasource.password=${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:}}
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+# JPA / Hibernate Configuration
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=false
+spring.jpa.properties.hibernate.format_sql=false
+
+# Bootstrap Administrator Setup (Used only on initial startup if no admin exists)
+app.security.admin.username=${APP_ADMIN_USERNAME:admin}
+app.security.admin.password=${APP_ADMIN_PASSWORD:}
+

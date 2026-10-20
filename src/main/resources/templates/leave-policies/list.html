@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave Policies - WorkforcePlan</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        .page-header {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a4296 100%);
+            color: #ffffff;
+            border-radius: 0.75rem;
+        }
+    </style>
+</head>
+<body class="bg-light d-flex flex-column min-vh-100">
+
+    <!-- Navigation Bar -->
+    <nav th:replace="~{fragments/navbar :: navbar('leave-policies')}"></nav>
+
+    <!-- Main Content -->
+    <main class="container my-4 flex-grow-1">
+
+        <!-- Page Header -->
+        <div class="page-header p-4 mb-4 shadow-sm">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-1 text-white-50">
+                            <li class="breadcrumb-item"><a href="/" class="text-white text-decoration-none">Home</a></li>
+                            <li class="breadcrumb-item text-white-50">Leave Configuration</li>
+                            <li class="breadcrumb-item active text-white" aria-current="page">Leave Policies</li>
+                        </ol>
+                    </nav>
+                    <h2 class="fw-bold mb-1"><i class="bi bi-journal-bookmark-fill me-2"></i>Leave Policies Management</h2>
+                    <p class="mb-0 text-white-50">Configure annual quotas, carry-forward allowances, and eligibility scopes.</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/leave-policies/new" class="btn btn-light fw-bold shadow-sm">
+                        <i class="bi bi-plus-circle-fill me-1 text-primary"></i> Create Leave Policy
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <span th:text="${successMessage}">Operation successful!</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Policies Table Card -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h5 class="card-title fw-bold mb-0 text-dark">
+                    <i class="bi bi-journal-text me-2 text-primary"></i> Configured Leave Policies
+                </h5>
+                <span class="badge bg-secondary-subtle text-secondary border px-3 py-2 rounded-pill" th:text="${policies.size()} + ' Policies'">0 Policies</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Policy Name</th>
+                                <th scope="col">Leave Type</th>
+                                <th scope="col">Scope (Dept / Type)</th>
+                                <th scope="col" class="text-center">Allocation</th>
+                                <th scope="col">Carry Forward</th>
+                                <th scope="col">Year</th>
+                                <th scope="col">Status</th>
+                                <th scope="col" class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${policies.empty}">
+                                <td colspan="8" class="text-center py-5 text-muted">
+                                    <i class="bi bi-journal-x fs-1 d-block mb-2 text-secondary"></i>
+                                    No leave policies configured yet. Click "Create Leave Policy" to get started.
+                                </td>
+                            </tr>
+                            <tr th:each="policy : ${policies}">
+                                <td>
+                                    <div class="fw-bold text-dark" th:text="${policy.policyName}">Standard Casual Policy</div>
+                                    <small class="text-muted" th:text="'Min Service: ' + ${policy.minServiceDays} + ' days'">Min Service: 0 days</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle" th:text="${policy.leaveType.name} + ' (' + ${policy.leaveType.code} + ')'">
+                                        Casual Leave (CL)
+                                    </span>
+                                </td>
+                                <td>
+                                    <div>
+                                        <i class="bi bi-building text-secondary me-1"></i>
+                                        <span th:text="${policy.applicableDepartment != null ? policy.applicableDepartment.name : 'All Departments'}">All Departments</span>
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="bi bi-person-workspace me-1"></i>
+                                        <span th:text="${policy.applicableEmploymentType != null ? policy.applicableEmploymentType.displayName : 'All Types'}">All Types</span>
+                                    </small>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-success-subtle text-success fs-6 fw-bold px-3 py-2 border border-success-subtle" th:text="${policy.annualAllocation} + ' Days'">
+                                        12 Days
+                                    </span>
+                                </td>
+                                <td>
+                                    <span th:if="${policy.allowCarryForward}" class="badge bg-info-subtle text-info-emphasis border border-info-subtle">
+                                        <i class="bi bi-arrow-repeat me-1"></i> Up to <span th:text="${policy.maxCarryForwardDays}">5</span> Days
+                                    </span>
+                                    <span th:if="${!policy.allowCarryForward}" class="badge bg-light text-muted border">
+                                        No Carry Forward
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border font-monospace" th:text="${policy.effectiveYear}">2026</span>
+                                </td>
+                                <td>
+                                    <span th:if="${policy.active}" class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                        <i class="bi bi-check-circle-fill me-1"></i> Active
+                                    </span>
+                                    <span th:if="${!policy.active}" class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1">
+                                        Inactive
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a th:href="@{/leave-policies/{id}/edit(id=${policy.id})}" class="btn btn-outline-primary" title="Edit Policy">
+                                            <i class="bi bi-pencil-square"></i> Edit
+                                        </a>
+                                        <form th:action="@{/leave-policies/{id}/toggle-status(id=${policy.id})}" method="post" class="d-inline">
+                                            <button type="submit"
+                                                    class="btn btn-sm"
+                                                    th:classappend="${policy.active ? 'btn-outline-danger' : 'btn-outline-success'}"
+                                                    th:title="${policy.active ? 'Deactivate' : 'Activate'}">
+                                                <i th:class="${policy.active ? 'bi bi-slash-circle' : 'bi bi-check-circle'}"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white-50 py-3 mt-auto">
+        <div class="container text-center">
+            <small>Employee Leave &amp; Workforce Availability Planning Platform &bull; Phase 3 Leave Policies</small>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

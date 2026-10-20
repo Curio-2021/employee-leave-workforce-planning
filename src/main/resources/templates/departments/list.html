@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Department Management - WorkforcePlan</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        .page-header {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a4296 100%);
+            color: #ffffff;
+            border-radius: 0.75rem;
+        }
+    </style>
+</head>
+<body class="bg-light d-flex flex-column min-vh-100">
+
+    <!-- Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold d-flex align-items-center" href="/">
+                <i class="bi bi-calendar2-check-fill me-2 text-primary"></i>
+                <span>WorkforcePlan</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu" aria-controls="navMenu" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navMenu">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/"><i class="bi bi-speedometer2 me-1"></i> Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="/departments"><i class="bi bi-building me-1"></i> Departments</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/employees"><i class="bi bi-people-fill me-1"></i> Employees</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true"><i class="bi bi-card-checklist me-1"></i> Leave Requests</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true"><i class="bi bi-calendar3-range me-1"></i> Availability</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true"><i class="bi bi-graph-up me-1"></i> Reports</a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">
+                        <i class="bi bi-circle-fill me-1" style="font-size: 0.55rem;"></i> System Online
+                    </span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container my-4 flex-grow-1">
+
+        <!-- Page Header -->
+        <div class="page-header p-4 mb-4 shadow-sm">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-1 text-white-50">
+                            <li class="breadcrumb-item"><a href="/" class="text-white text-decoration-none">Home</a></li>
+                            <li class="breadcrumb-item active text-white" aria-current="page">Departments</li>
+                        </ol>
+                    </nav>
+                    <h2 class="fw-bold mb-1"><i class="bi bi-building me-2"></i>Department Management</h2>
+                    <p class="mb-0 text-white-50">Create and oversee organizational units for employee assignments.</p>
+                </div>
+                <div>
+                    <a href="/employees" class="btn btn-light btn-sm fw-semibold"><i class="bi bi-people me-1"></i> View Employees</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <span th:text="${successMessage}">Operation successful!</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div class="row g-4">
+            <!-- Add Department Form Card -->
+            <div class="col-lg-4">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h5 class="card-title fw-bold mb-0 text-primary d-flex align-items-center">
+                            <i class="bi bi-plus-circle-fill me-2"></i> Add Department
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form th:action="@{/departments}" th:object="${departmentDTO}" method="post">
+                            <div class="mb-3">
+                                <label for="deptName" class="form-label fw-semibold">Department Name <span class="text-danger">*</span></label>
+                                <input type="text"
+                                       id="deptName"
+                                       th:field="*{name}"
+                                       class="form-control"
+                                       th:classappend="${#fields.hasErrors('name')} ? 'is-invalid' : ''"
+                                       placeholder="e.g., Engineering, Human Resources"
+                                       required>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">
+                                    Department name error
+                                </div>
+                                <small class="form-text text-muted">Must be between 2 and 100 characters and unique.</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="deptDesc" class="form-label fw-semibold">Description</label>
+                                <textarea id="deptDesc"
+                                          th:field="*{description}"
+                                          class="form-control"
+                                          th:classappend="${#fields.hasErrors('description')} ? 'is-invalid' : ''"
+                                          rows="3"
+                                          placeholder="Optional short description of the unit functions"></textarea>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('description')}" th:errors="*{description}">
+                                    Description error
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="bi bi-check2-circle me-1"></i> Save Department
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Existing Departments Table -->
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="card-title fw-bold mb-0 text-dark">
+                            <i class="bi bi-list-ul me-2 text-primary"></i> Configured Departments
+                        </h5>
+                        <span class="badge bg-primary rounded-pill px-3 py-2" th:text="${departments.size()} + ' Departments'">0 Departments</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col" style="width: 80px;">#ID</th>
+                                        <th scope="col">Department Name</th>
+                                        <th scope="col">Description</th>
+                                        <th scope="col" class="text-center">Staff Count</th>
+                                        <th scope="col" class="text-end">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:if="${departments.empty}">
+                                        <td colspan="5" class="text-center py-4 text-muted">
+                                            <i class="bi bi-folder-x fs-1 d-block mb-2 text-secondary"></i>
+                                            No departments have been added yet. Use the form on the left to create the first department.
+                                        </td>
+                                    </tr>
+                                    <tr th:each="dept : ${departments}">
+                                        <td class="fw-semibold text-secondary" th:text="'#' + ${dept.id}">#1</td>
+                                        <td>
+                                            <span class="fw-bold text-dark" th:text="${dept.name}">Engineering</span>
+                                        </td>
+                                        <td class="text-muted small" th:text="${dept.description != null && !dept.description.isEmpty() ? dept.description : '—'}">
+                                            Core software engineering and devops.
+                                        </td>
+                                        <td class="text-center">
+                                            <a th:href="@{/employees(departmentId=${dept.id})}" class="badge bg-primary-subtle text-primary border border-primary-subtle text-decoration-none px-3 py-2 rounded-pill">
+                                                <i class="bi bi-people me-1"></i>
+                                                <span th:text="${dept.employees != null ? dept.employees.size() : 0}">0</span> Staff
+                                            </a>
+                                        </td>
+                                        <td class="text-end">
+                                            <a th:href="@{/employees(departmentId=${dept.id})}" class="btn btn-outline-secondary btn-sm" title="View department members">
+                                                <i class="bi bi-eye me-1"></i> View Members
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white-50 py-3 mt-auto">
+        <div class="container text-center">
+            <small>Employee Leave &amp; Workforce Availability Planning Platform &bull; Phase 2 Department Management</small>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

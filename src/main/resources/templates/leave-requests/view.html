@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${'Request ' + request.requestNumber + ' - WorkforcePlan'}">Leave Request Details</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        .page-header {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a4296 100%);
+            color: #ffffff;
+            border-radius: 0.75rem;
+        }
+    </style>
+</head>
+<body class="bg-light d-flex flex-column min-vh-100">
+
+    <!-- Navigation Bar -->
+    <nav th:replace="~{fragments/navbar :: navbar('leave-requests')}"></nav>
+
+    <!-- Main Content -->
+    <main class="container my-4 flex-grow-1">
+
+        <!-- Page Header -->
+        <div class="page-header p-4 mb-4 shadow-sm">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-1 text-white-50">
+                            <li class="breadcrumb-item"><a href="/" class="text-white text-decoration-none">Home</a></li>
+                            <li class="breadcrumb-item"><a href="/leave-requests" class="text-white text-decoration-none">Leave Requests</a></li>
+                            <li class="breadcrumb-item active text-white" aria-current="page" th:text="${request.requestNumber}">LR-2026-0001</li>
+                        </ol>
+                    </nav>
+                    <div class="d-flex align-items-center gap-3">
+                        <h2 class="fw-bold mb-0" th:text="${request.requestNumber}">LR-2026-0001</h2>
+                        <!-- Status Badge -->
+                        <span th:if="${request.status.name() == 'PENDING'}" class="badge bg-warning text-dark fs-6 px-3 py-2 rounded-pill">
+                            <i class="bi bi-hourglass-split me-1"></i> Pending Approval
+                        </span>
+                        <span th:if="${request.status.name() == 'APPROVED'}" class="badge bg-success fs-6 px-3 py-2 rounded-pill">
+                            <i class="bi bi-check-circle-fill me-1"></i> Approved
+                        </span>
+                        <span th:if="${request.status.name() == 'APPROVED' and request.staffingOverrideJustification != null}" class="badge bg-warning-subtle text-warning border border-warning-subtle fs-6 px-3 py-2 rounded-pill">
+                            <i class="bi bi-shield-exclamation me-1"></i> Staffing Overridden
+                        </span>
+                        <span th:if="${request.status.name() == 'REJECTED'}" class="badge bg-danger fs-6 px-3 py-2 rounded-pill">
+                            <i class="bi bi-x-circle-fill me-1"></i> Rejected
+                        </span>
+                        <span th:if="${request.status.name() == 'CANCELLED'}" class="badge bg-secondary fs-6 px-3 py-2 rounded-pill">
+                            <i class="bi bi-slash-circle me-1"></i> Cancelled
+                        </span>
+                    </div>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="/leave-requests" class="btn btn-outline-light">
+                        <i class="bi bi-arrow-left me-1"></i> All Requests
+                    </a>
+                    <a th:href="@{'/leave-balances?employeeId=' + ${request.employee.id}}" class="btn btn-light fw-semibold">
+                        <i class="bi bi-wallet2 me-1 text-primary"></i> View Balances
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <span th:text="${successMessage}">Operation successful!</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span th:text="${errorMessage}">Error occurred.</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div class="row g-4">
+            <!-- Left Column: Details -->
+            <div class="col-lg-8">
+                <!-- Request & Employee Card -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="fw-bold mb-0 text-secondary">
+                            <i class="bi bi-person-lines-fill me-2 text-primary"></i>Employee &amp; Leave Specifics
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <label class="text-muted small text-uppercase fw-semibold d-block">Employee Name</label>
+                                <span class="fw-bold fs-6" th:text="${request.employee.fullName}">John Doe</span>
+                                <div class="text-muted small" th:text="${'ID: ' + request.employee.employeeId + ' | ' + request.employee.email}">EMP001</div>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="text-muted small text-uppercase fw-semibold d-block">Department &amp; Role</label>
+                                <span class="fw-semibold" th:text="${request.employee.department != null ? request.employee.department.name : 'No Department'}">Engineering</span>
+                                <div class="text-muted small" th:text="${request.employee.employmentType}">FULL_TIME</div>
+                            </div>
+                            <hr class="my-2">
+                            <div class="col-sm-4">
+                                <label class="text-muted small text-uppercase fw-semibold d-block">Leave Type</label>
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle fs-6 px-2 py-1"
+                                      th:text="${request.leaveType.name + ' (' + request.leaveType.code + ')'}">
+                                    Casual Leave (CL)
+                                </span>
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="text-muted small text-uppercase fw-semibold d-block">Date Range</label>
+                                <span class="fw-bold" th:text="${#temporals.format(request.startDate, 'dd MMM yyyy') + ' - ' + #temporals.format(request.endDate, 'dd MMM yyyy')}">
+                                    01 Jan 2026 - 03 Jan 2026
+                                </span>
+                                <span th:if="${request.halfDay}" class="badge bg-info-subtle text-info border border-info-subtle d-inline-block mt-1">
+                                    Half Day (0.50 d)
+                                </span>
+                            </div>
+                            <div class="col-sm-4">
+                                <label class="text-muted small text-uppercase fw-semibold d-block">Server-Calculated Duration</label>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle fs-5 px-3 py-1 fw-bold"
+                                      th:text="${request.duration + ' Working Days'}">
+                                    3.00 Working Days
+                                </span>
+                            </div>
+                            <div class="col-12">
+                                <label class="text-muted small text-uppercase fw-semibold d-block">Reason for Leave</label>
+                                <div class="p-3 bg-light rounded-3 border" th:text="${request.reason}">
+                                    Attending family wedding ceremony.
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="text-muted small text-uppercase fw-semibold d-block">Submission Timestamp</label>
+                                <span class="text-secondary small" th:text="${#temporals.format(request.submissionTimestamp, 'dd MMM yyyy HH:mm:ss')}">
+                                    01 Jan 2026 10:00:00
+                                </span>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="text-muted small text-uppercase fw-semibold d-block">Assigned Route</label>
+                                <span class="badge text-bg-light border" th:text="${request.approvalRoute != null ? request.approvalRoute : 'MANAGER_APPROVAL'}">
+                                    MANAGER_APPROVAL
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Approval Decision & Workflow History Card -->
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="fw-bold mb-0 text-secondary">
+                            <i class="bi bi-diagram-3 me-2 text-primary"></i>Decision History &amp; Audit Trail
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <label class="text-muted small text-uppercase fw-semibold d-block">Assigned Approver</label>
+                                <div th:if="${request.assignedApprover != null}">
+                                    <span class="fw-bold" th:text="${request.assignedApprover.fullName}">Manager Name</span>
+                                    <div class="text-muted small" th:text="${'ID: ' + request.assignedApprover.employeeId}">EMP002</div>
+                                </div>
+                                <span th:if="${request.assignedApprover == null}" class="text-muted fst-italic">None Assigned</span>
+                            </div>
+                            <div class="col-sm-6">
+                                <label class="text-muted small text-uppercase fw-semibold d-block">Decided By</label>
+                                <div th:if="${request.decidedBy != null}">
+                                    <span class="fw-bold" th:text="${request.decidedBy.fullName}">Approver Name</span>
+                                    <div class="text-muted small" th:text="${#temporals.format(request.decisionTimestamp, 'dd MMM yyyy HH:mm:ss')}">Timestamp</div>
+                                </div>
+                                <span th:if="${request.decidedBy == null}" class="text-muted fst-italic">Awaiting Decision</span>
+                            </div>
+
+                            <!-- Approver Comments -->
+                            <div th:if="${request.approverComments != null}" class="col-12">
+                                <label class="text-muted small text-uppercase fw-semibold d-block">Approver Comments</label>
+                                <div class="p-3 bg-light rounded-3 border" th:text="${request.approverComments}">
+                                    Approved. Coverage is arranged.
+                                </div>
+                            </div>
+
+                            <!-- Staffing Override Justification -->
+                            <div th:if="${request.staffingOverrideJustification != null}" class="col-12">
+                                <label class="text-warning small text-uppercase fw-semibold d-block">
+                                    <i class="bi bi-shield-exclamation me-1"></i>Staffing Override Justification
+                                </label>
+                                <div class="p-3 bg-warning-subtle text-dark rounded-3 border border-warning-subtle fw-semibold" th:text="${request.staffingOverrideJustification}">
+                                    Emergency project cover arranged. Approved with advisory staffing conflict.
+                                </div>
+                            </div>
+
+                            <!-- Rejection Reason -->
+                            <div th:if="${request.rejectionReason != null}" class="col-12">
+                                <label class="text-danger small text-uppercase fw-semibold d-block">Rejection Reason</label>
+                                <div class="p-3 bg-danger-subtle text-danger rounded-3 border border-danger-subtle fw-semibold" th:text="${request.rejectionReason}">
+                                    Critical project deployment in the same period.
+                                </div>
+                            </div>
+
+                            <!-- Cancellation Reason -->
+                            <div th:if="${request.cancellationReason != null}" class="col-12">
+                                <label class="text-secondary small text-uppercase fw-semibold d-block">Cancellation Details</label>
+                                <div class="p-3 bg-secondary-subtle text-secondary rounded-3 border fw-semibold" th:text="${request.cancellationReason}">
+                                    Cancelled by employee.
+                                </div>
+                                <small class="text-muted" th:text="${'Cancelled on: ' + #temporals.format(request.cancelledTimestamp, 'dd MMM yyyy HH:mm')}"></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Workforce Availability & Conflict Analysis Card (Phase 6) -->
+                <div class="card border-0 shadow-sm mb-4" th:if="${conflictReport != null}">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold mb-0 text-secondary">
+                            <i class="bi bi-shield-shaded me-2 text-primary"></i>Workforce Availability &amp; Conflict Analysis
+                        </h5>
+                        <!-- Conflict Badge -->
+                        <span th:if="${conflictReport.overallSeverity.name() == 'NONE'}" class="badge bg-success fs-6 px-3 py-2 rounded-pill">
+                            <i class="bi bi-check-circle-fill me-1"></i> Staffing Optimal
+                        </span>
+                        <span th:if="${conflictReport.overallSeverity.name() == 'WARNING_PENDING_RISK'}" class="badge bg-warning text-dark fs-6 px-3 py-2 rounded-pill">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i> Pending Staffing Risk
+                        </span>
+                        <span th:if="${conflictReport.overallSeverity.name() == 'CRITICAL_STAFFING_SHORTAGE'}" class="badge bg-danger fs-6 px-3 py-2 rounded-pill">
+                            <i class="bi bi-exclamation-octagon-fill me-1"></i> Critical Shortage
+                        </span>
+                    </div>
+                    <div class="card-body p-4">
+                        <!-- Rule Context Alert -->
+                        <div class="alert mb-3"
+                             th:classappend="${conflictReport.overallSeverity.name() == 'CRITICAL_STAFFING_SHORTAGE' ? 'alert-danger' : (conflictReport.overallSeverity.name() == 'WARNING_PENDING_RISK' ? 'alert-warning' : 'alert-success')}">
+                            <div class="d-flex align-items-center">
+                                <i class="bi fs-4 me-2"
+                                   th:classappend="${conflictReport.overallSeverity.name() == 'CRITICAL_STAFFING_SHORTAGE' ? 'bi-x-octagon-fill text-danger' : (conflictReport.overallSeverity.name() == 'WARNING_PENDING_RISK' ? 'bi-exclamation-triangle-fill text-warning' : 'bi-check-circle-fill text-success')}"></i>
+                                <div>
+                                    <span class="fw-bold" th:text="${conflictReport.explanation}">Assessment summary.</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Rule Details Summary -->
+                        <div class="row g-2 mb-3 small text-muted">
+                            <div class="col-sm-4">
+                                <strong>Department:</strong> <span th:text="${conflictReport.departmentName}">Engineering</span>
+                            </div>
+                            <div class="col-sm-4">
+                                <strong>Required Staff Threshold:</strong> <span class="fw-bold text-dark" th:text="${conflictReport.requiredStaff}">2</span>
+                            </div>
+                            <div class="col-sm-4">
+                                <strong>Enforcement Mode:</strong>
+                                <span th:if="${conflictReport.strictRuleEnforced}" class="badge bg-danger">Strict Blocking</span>
+                                <span th:if="${!conflictReport.strictRuleEnforced}" class="badge bg-warning text-dark">Advisory Override</span>
+                            </div>
+                        </div>
+
+                        <!-- Daily Breakdown Table -->
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered align-middle mb-0">
+                                <thead class="table-light text-center small">
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Day Type</th>
+                                        <th>Active Staff</th>
+                                        <th>Required Min</th>
+                                        <th>Projected Available</th>
+                                        <th>Deficit</th>
+                                        <th>Daily Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="text-center small">
+                                    <tr th:each="day : ${conflictReport.dailySnapshots}"
+                                        th:classappend="${!day.workingDay ? 'table-light text-muted' : (day.severity.name() == 'CRITICAL_STAFFING_SHORTAGE' ? 'table-danger' : (day.severity.name() == 'WARNING_PENDING_RISK' ? 'table-warning' : ''))}">
+                                        <td class="fw-semibold" th:text="${#temporals.format(day.date, 'dd MMM (EEE)')}">01 Oct (Thu)</td>
+                                        <td>
+                                            <span th:if="${day.holiday}" class="badge bg-info text-dark" th:text="${'Holiday: ' + day.holidayName}">Holiday</span>
+                                            <span th:if="${!day.workingDay and !day.holiday}" class="badge bg-secondary">Weekend</span>
+                                            <span th:if="${day.workingDay}" class="badge bg-light text-dark border">Working Day</span>
+                                        </td>
+                                        <td th:text="${day.totalActiveStaff}">10</td>
+                                        <td class="fw-bold">
+                                            <span th:if="${day.workingDay}" th:text="${day.requiredStaff}">2</span>
+                                            <span th:if="${!day.workingDay}">-</span>
+                                        </td>
+                                        <td class="fw-bold">
+                                            <span th:if="${day.workingDay}"
+                                                  th:classappend="${day.availableStaff < day.requiredStaff ? 'text-danger' : 'text-success'}"
+                                                  th:text="${#numbers.formatDecimal(day.availableStaff, 1, 1)}">8.0</span>
+                                            <span th:if="${!day.workingDay}">-</span>
+                                        </td>
+                                        <td>
+                                            <span th:if="${day.workingDay and day.deficit > 0}" class="badge bg-danger"
+                                                  th:text="${'-' + #numbers.formatDecimal(day.deficit, 1, 1)}">-1.0</span>
+                                            <span th:if="${day.workingDay and day.deficit <= 0}" class="text-success">0.0</span>
+                                            <span th:if="${!day.workingDay}">-</span>
+                                        </td>
+                                        <td>
+                                            <span th:if="${!day.workingDay}" class="badge bg-secondary">Non-Working</span>
+                                            <span th:if="${day.workingDay and day.severity.name() == 'CRITICAL_STAFFING_SHORTAGE'}" class="badge bg-danger">Shortage</span>
+                                            <span th:if="${day.workingDay and day.severity.name() == 'WARNING_PENDING_RISK'}" class="badge bg-warning text-dark">Risk</span>
+                                            <span th:if="${day.workingDay and day.severity.name() == 'NONE'}" class="badge bg-success">Optimal</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-2 text-muted small fst-italic">
+                            * Half-day absences are evaluated as 0.5 daily capacity weight (estimated daily coverage).
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Actions & Workflow Processing -->
+            <div class="col-lg-4">
+
+                <!-- Actions Card -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white py-3">
+                        <h6 class="fw-bold mb-0 text-primary">
+                            <i class="bi bi-gear-wide-connected me-2"></i>Actions &amp; Workflow
+                        </h6>
+                    </div>
+                    <div class="card-body p-3">
+
+                        <!-- If PENDING: Show Approve and Reject Actions -->
+                        <div th:if="${request.status.name() == 'PENDING'}" class="d-flex flex-column gap-3">
+                            <div class="alert alert-warning py-2 px-3 small mb-0">
+                                <i class="bi bi-info-circle me-1"></i>
+                                This request is pending approval. Approving will automatically debit <strong><span th:text="${request.duration}">1.0</span> days</strong> from the employee's balance ledger.
+                            </div>
+
+                            <button th:if="${canApprove}" type="button" class="btn btn-success fw-semibold w-100 py-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#approveModal">
+                                <i class="bi bi-check-circle-fill me-1"></i> Approve Leave Request
+                            </button>
+
+                            <button th:if="${canApprove}" type="button" class="btn btn-danger fw-semibold w-100 py-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                                <i class="bi bi-x-circle-fill me-1"></i> Reject Leave Request
+                            </button>
+
+                            <button th:if="${canCancel}" type="button" class="btn btn-outline-secondary btn-sm w-100 mt-2" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                                <i class="bi bi-slash-circle me-1"></i> Cancel Request
+                            </button>
+                        </div>
+
+                        <!-- If APPROVED: Show Cancel Option -->
+                        <div th:if="${request.status.name() == 'APPROVED'}" class="d-flex flex-column gap-2">
+                            <div class="alert alert-success py-2 px-3 small mb-2">
+                                <i class="bi bi-check2-all me-1"></i>
+                                Request approved on <span th:text="${#temporals.format(request.decisionTimestamp, 'dd MMM yyyy')}">date</span>.
+                            </div>
+                            <button th:if="${canCancel}" type="button" class="btn btn-outline-danger btn-sm w-100" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                                <i class="bi bi-arrow-counterclockwise me-1"></i> Cancel &amp; Reverse Deduction
+                            </button>
+                        </div>
+
+                        <!-- If REJECTED or CANCELLED -->
+                        <div th:if="${request.status.name() == 'REJECTED' or request.status.name() == 'CANCELLED'}">
+                            <div class="alert alert-secondary py-2 px-3 small mb-0 text-center">
+                                <i class="bi bi-lock me-1"></i> This request is in a final state and cannot be modified.
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Security & Audit Attribution -->
+                <div class="card border-0 shadow-sm bg-light">
+                    <div class="card-body p-3 small text-muted">
+                        <h6 class="fw-bold text-dark mb-1">
+                            <i class="bi bi-shield-lock-fill text-primary me-1"></i> Security &amp; Audit Attribution
+                        </h6>
+                        <p class="mb-0">
+                            Workflow actions are strictly authorized and immutably attributed to your authenticated identity in the system audit trail.
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Approve Modal -->
+    <div class="modal fade" id="approveModal" tabindex="-1" aria-labelledby="approveModalLabel" aria-hidden="true" th:if="${request.status.name() == 'PENDING' and canApprove}">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form th:action="@{'/leave-requests/' + ${request.id} + '/approve'}" method="post">
+                    <div class="modal-header bg-success text-white">
+                        <h5 class="modal-title" id="approveModalLabel"><i class="bi bi-check-circle-fill me-2"></i>Approve Leave Request</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-3">
+                            Confirm approval for <strong><span th:text="${request.employee.fullName}">John Doe</span></strong>'s request of <strong><span th:text="${request.duration + ' days'}">1.0 days</span></strong>?
+                        </p>
+
+                        <!-- Workforce Conflict Warning in Modal (Phase 6) -->
+                        <div th:if="${conflictReport != null and conflictReport.hasConflicts}" class="mb-3">
+                            <!-- Strict Blocking Alert -->
+                            <div th:if="${conflictReport.strictRuleEnforced}" class="alert alert-danger mb-0">
+                                <div class="fw-bold mb-1"><i class="bi bi-x-octagon-fill me-1"></i> Strict Staffing Policy Enforced</div>
+                                <p class="small mb-0">
+                                    This department enforces strict staffing limits. Approving this leave would breach the required minimum of <strong th:text="${conflictReport.requiredStaff}">2</strong> on-duty staff. Approval cannot proceed under current policy.
+                                </p>
+                            </div>
+
+                            <!-- Advisory Shortage Warning with Override Acknowledgement -->
+                            <div th:if="${!conflictReport.strictRuleEnforced}" class="alert alert-warning mb-0">
+                                <div class="fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i> Advisory Staffing Shortage Warning</div>
+                                <p class="small mb-2">
+                                    Approving this leave causes staffing to drop below the required minimum of <strong th:text="${conflictReport.requiredStaff}">2</strong>. An advisory override is permitted only with explicit acknowledgement and written justification.
+                                </p>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="overrideConfirmed" id="overrideConfirmed" value="true" required>
+                                    <label class="form-check-label small fw-bold text-dark" for="overrideConfirmed">
+                                        I acknowledge the workforce shortage risk and confirm manager override <span class="text-danger">*</span>
+                                    </label>
+                                </div>
+                                <div>
+                                    <label for="overrideJustification" class="form-label small fw-semibold text-dark">Manager Override Justification <span class="text-danger">*</span></label>
+                                    <textarea name="overrideJustification" id="overrideJustification" class="form-control form-control-sm" rows="2" placeholder="Specify cross-training, shift adjustments, or coverage plan..." required></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Dev Mode Approver Selector -->
+                        <div class="mb-3">
+                            <label for="actingApproverIdApprove" class="form-label small fw-semibold text-muted">Acting Approver (Dev Mode)</label>
+                            <select name="actingApproverId" id="actingApproverIdApprove" class="form-select form-select-sm">
+                                <option th:if="${request.assignedApprover != null}"
+                                        th:value="${request.assignedApprover.id}"
+                                        th:text="${request.assignedApprover.fullName + ' (Assigned Manager)'}">
+                                </option>
+                                <option th:each="mgr : ${eligibleApprovers}"
+                                        th:if="${(request.assignedApprover == null or mgr.id != request.assignedApprover.id) and (mgr.id != request.employee.id)}"
+                                        th:value="${mgr.id}"
+                                        th:text="${mgr.fullName + ' (' + (mgr.department != null ? mgr.department.name : 'Staff') + ')'}">
+                                </option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="approverComments" class="form-label small fw-semibold text-muted">Comments (Optional)</label>
+                            <textarea name="approverComments" id="approverComments" class="form-control" rows="2" placeholder="e.g. Approved. Handover confirmed."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button th:if="${conflictReport == null or !conflictReport.hasConflicts or !conflictReport.strictRuleEnforced}"
+                                type="submit" class="btn btn-success fw-bold">
+                            <i class="bi bi-check2 me-1"></i> Confirm Approval
+                        </button>
+                        <button th:if="${conflictReport != null and conflictReport.hasConflicts and conflictReport.strictRuleEnforced}"
+                                type="button" class="btn btn-danger fw-bold" disabled>
+                            <i class="bi bi-lock-fill me-1"></i> Blocked by Strict Policy
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reject Modal -->
+    <div class="modal fade" id="rejectModal" tabindex="-1" aria-labelledby="rejectModalLabel" aria-hidden="true" th:if="${request.status.name() == 'PENDING' and canApprove}">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form th:action="@{'/leave-requests/' + ${request.id} + '/reject'}" method="post">
+                    <div class="modal-header bg-danger text-white">
+                        <h5 class="modal-title" id="rejectModalLabel"><i class="bi bi-x-circle-fill me-2"></i>Reject Leave Request</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Dev Mode Approver Selector -->
+                        <div class="mb-3">
+                            <label for="actingApproverIdReject" class="form-label small fw-semibold text-muted">Acting Approver (Dev Mode)</label>
+                            <select name="actingApproverId" id="actingApproverIdReject" class="form-select form-select-sm">
+                                <option th:if="${request.assignedApprover != null}"
+                                        th:value="${request.assignedApprover.id}"
+                                        th:text="${request.assignedApprover.fullName + ' (Assigned Manager)'}">
+                                </option>
+                                <option th:each="mgr : ${eligibleApprovers}"
+                                        th:if="${(request.assignedApprover == null or mgr.id != request.assignedApprover.id) and (mgr.id != request.employee.id)}"
+                                        th:value="${mgr.id}"
+                                        th:text="${mgr.fullName + ' (' + (mgr.department != null ? mgr.department.name : 'Staff') + ')'}">
+                                </option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="rejectionReason" class="form-label small fw-semibold text-danger">Rejection Reason <span class="text-danger">*</span></label>
+                            <textarea name="rejectionReason" id="rejectionReason" class="form-control" rows="3" required placeholder="State reason for rejecting this leave application..."></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="approverCommentsReject" class="form-label small fw-semibold text-muted">Additional Comments (Optional)</label>
+                            <textarea name="approverComments" id="approverCommentsReject" class="form-control" rows="2" placeholder="e.g. Please discuss with your lead to reschedule."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-danger fw-bold">
+                            <i class="bi bi-x me-1"></i> Reject Request
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cancel Modal -->
+    <div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true"
+         th:if="${(request.status.name() == 'PENDING' or request.status.name() == 'APPROVED') and canCancel}">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form th:action="@{'/leave-requests/' + ${request.id} + '/cancel'}" method="post">
+                    <div class="modal-header bg-secondary text-white">
+                        <h5 class="modal-title" id="cancelModalLabel"><i class="bi bi-slash-circle me-2"></i>Cancel Leave Request</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p th:if="${request.status.name() == 'APPROVED'}" class="text-danger fw-semibold">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                            This request was previously approved. Cancelling will atomically reverse the <span th:text="${request.duration}">1.0</span> days deduction back into the employee's available balance!
+                        </p>
+                        <div class="mb-3">
+                            <label for="cancellationReason" class="form-label small fw-semibold text-muted">Cancellation Reason</label>
+                            <textarea name="cancellationReason" id="cancellationReason" class="form-control" rows="2" placeholder="e.g. Plans changed / Personal reasons"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-secondary fw-bold">
+                            <i class="bi bi-check2 me-1"></i> Confirm Cancellation
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white-50 py-4 mt-auto">
+        <div class="container text-center">
+            <p class="mb-1 text-white">Employee Leave &amp; Workforce Availability Planning Platform</p>
+            <small class="text-secondary">BE CSE Major Project &bull; Built with Spring Boot 4 and Thymeleaf</small>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${'Configure Staffing Rule - ' + ruleDTO.departmentName + ' - WorkforcePlan'}">Configure Staffing Rule</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        .page-header {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a4296 100%);
+            color: #ffffff;
+            border-radius: 0.75rem;
+        }
+    </style>
+</head>
+<body class="bg-light d-flex flex-column min-vh-100">
+
+    <!-- Navigation Bar -->
+    <nav th:replace="~{fragments/navbar :: navbar('staffing-rules')}"></nav>
+
+    <!-- Main Container -->
+    <main class="container my-4 flex-grow-1">
+
+        <!-- Page Header -->
+        <div class="page-header p-4 mb-4 shadow-sm">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-1 text-white-50">
+                            <li class="breadcrumb-item"><a href="/" class="text-white text-decoration-none">Home</a></li>
+                            <li class="breadcrumb-item"><a href="/staffing-rules" class="text-white text-decoration-none">Staffing Rules</a></li>
+                            <li class="breadcrumb-item active text-white" aria-current="page" th:text="${ruleDTO.departmentName}">Engineering</li>
+                        </ol>
+                    </nav>
+                    <h2 class="fw-bold mb-1">
+                        <i class="bi bi-shield-check me-2"></i>Configure Staffing Rule
+                    </h2>
+                    <p class="mb-0 text-white-50" th:text="${'Set availability rules for ' + ruleDTO.departmentName + ' department'}">Configure Rule</p>
+                </div>
+                <div>
+                    <a href="/staffing-rules" class="btn btn-outline-light">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Rules
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error Message -->
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span th:text="${errorMessage}">Error occurred.</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white py-3">
+                        <h5 class="fw-bold mb-0 text-secondary">
+                            <i class="bi bi-sliders me-2 text-primary"></i>Threshold &amp; Policy Settings
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <form th:action="@{'/staffing-rules/' + ${ruleDTO.departmentId}}" th:object="${ruleDTO}" method="post">
+                            <input type="hidden" th:field="*{id}">
+                            <input type="hidden" th:field="*{departmentId}">
+                            <input type="hidden" th:field="*{departmentName}">
+
+                            <!-- Department Info Alert -->
+                            <div class="alert alert-primary d-flex align-items-center mb-4" role="alert">
+                                <i class="bi bi-building fs-3 me-3 text-primary"></i>
+                                <div>
+                                    <div class="fw-bold fs-6">Target Department: <span th:text="*{departmentName}">Engineering</span></div>
+                                    <small class="text-muted">Staffing constraints will be evaluated during leave approvals for employees assigned to this unit.</small>
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-4">
+                                <!-- Minimum Staff Count -->
+                                <div class="col-md-6">
+                                    <label for="minimumStaffCount" class="form-label fw-semibold">
+                                        Absolute Minimum Staff Count <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="number" class="form-control" id="minimumStaffCount" th:field="*{minimumStaffCount}" min="0" max="1000" required>
+                                    <div class="form-text">Lowest acceptable absolute number of on-duty staff.</div>
+                                    <div class="text-danger small mt-1" th:if="${#fields.hasErrors('minimumStaffCount')}" th:errors="*{minimumStaffCount}"></div>
+                                </div>
+
+                                <!-- Minimum Staff Percentage -->
+                                <div class="col-md-6">
+                                    <label for="minimumStaffPercentage" class="form-label fw-semibold">
+                                        Minimum Staff Percentage (%)
+                                    </label>
+                                    <input type="number" class="form-control" id="minimumStaffPercentage" th:field="*{minimumStaffPercentage}" min="0" max="100" placeholder="e.g. 50 (Optional)">
+                                    <div class="form-text">Optional. If set, required staff = max(minCount, ceil(activeStaff * %)).</div>
+                                    <div class="text-danger small mt-1" th:if="${#fields.hasErrors('minimumStaffPercentage')}" th:errors="*{minimumStaffPercentage}"></div>
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-4">
+                                <!-- Strict Enforcement Checkbox -->
+                                <div class="col-md-6">
+                                    <div class="card p-3 border bg-light h-100">
+                                        <div class="form-check form-switch mb-2">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="strictEnforcement" th:field="*{strictEnforcement}">
+                                            <label class="form-check-label fw-bold" for="strictEnforcement">
+                                                Strict Enforcement
+                                            </label>
+                                        </div>
+                                        <small class="text-muted">
+                                            <strong>Enabled:</strong> Rejects approval outright if leave breaches minimum required staff.<br>
+                                            <strong>Disabled (Advisory):</strong> Allows manager approval only with explicit acknowledgement and written override justification.
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <!-- Include Weekends Checkbox -->
+                                <div class="col-md-6">
+                                    <div class="card p-3 border bg-light h-100">
+                                        <div class="form-check form-switch mb-2">
+                                            <input class="form-check-input" type="checkbox" role="switch" id="includeWeekends" th:field="*{includeWeekends}">
+                                            <label class="form-check-label fw-bold" for="includeWeekends">
+                                                Include Weekends (7-Day Ops)
+                                            </label>
+                                        </div>
+                                        <small class="text-muted">
+                                            <strong>Enabled:</strong> Saturdays and Sundays are evaluated as working days with full minimum staffing requirements.<br>
+                                            <strong>Disabled:</strong> Standard Monday–Friday schedule (weekends are non-working days).
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Active Status -->
+                            <div class="mb-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="activeRule" th:field="*{active}">
+                                    <label class="form-check-label fw-semibold" for="activeRule">
+                                        Rule Active &amp; Operational
+                                    </label>
+                                </div>
+                                <div class="form-text">If disabled, system falls back to default 1-staff baseline rule.</div>
+                            </div>
+
+                            <!-- Description / Notes -->
+                            <div class="mb-4">
+                                <label for="description" class="form-label fw-semibold">Description / Shift Coverage Policy Notes</label>
+                                <textarea class="form-control" id="description" th:field="*{description}" rows="3" placeholder="e.g. Core sprint support requires at least 2 engineers on active duty at all times."></textarea>
+                                <div class="form-text">Max 255 characters.</div>
+                                <div class="text-danger small mt-1" th:if="${#fields.hasErrors('description')}" th:errors="*{description}"></div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="d-flex justify-content-end gap-2">
+                                <a href="/staffing-rules" class="btn btn-outline-secondary">Cancel</a>
+                                <button type="submit" class="btn btn-primary fw-bold px-4">
+                                    <i class="bi bi-save me-1"></i> Save Staffing Rule
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white-50 py-4 mt-auto">
+        <div class="container text-center">
+            <p class="mb-1 text-white">Employee Leave &amp; Workforce Availability Planning Platform</p>
+            <small class="text-secondary">BE CSE Major Project &bull; Built with Spring Boot 4 and Thymeleaf</small>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

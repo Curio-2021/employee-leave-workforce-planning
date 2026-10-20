@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Audit Log - WorkforcePlan</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+</head>
+<body class="bg-light d-flex flex-column min-vh-100">
+
+    <!-- Navigation Bar -->
+    <nav th:replace="~{fragments/navbar :: navbar('audit-history')}"></nav>
+
+    <!-- Main Container -->
+    <main class="container my-4 flex-grow-1">
+
+        <!-- Page Header -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1 small">
+                        <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Dashboard</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Audit Log</li>
+                    </ol>
+                </nav>
+                <h2 class="fw-bold mb-1 d-flex align-items-center">
+                    <i class="bi bi-shield-shaded me-2 text-primary"></i> System Audit Trail
+                </h2>
+                <p class="text-muted mb-0 small">
+                    Immutable append-only record of administrative, operational, balance, and staffing policy events.
+                </p>
+            </div>
+            <div>
+                <a href="/policy-exceptions" class="btn btn-outline-danger btn-sm">
+                    <i class="bi bi-exclamation-diamond me-1"></i> Policy Exceptions
+                </a>
+            </div>
+        </div>
+
+        <!-- Pre-Security Attribution Notice -->
+        <div class="alert alert-info border-start border-4 border-info shadow-sm py-2 mb-4" role="alert">
+            <div class="d-flex align-items-center small">
+                <i class="bi bi-info-circle-fill fs-5 me-2 text-info"></i>
+                <div>
+                    <strong>Attribution Transparency:</strong> In current development mode prior to Spring Security authentication, form-selected user identities are recorded with the <code class="text-dark bg-white px-1 py-0 rounded border">DEV_UNAUTHENTICATED:</code> prefix to prevent misleading authentication claims.
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Card -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-3">
+                <form method="get" action="/audit-history" class="row g-2 align-items-end">
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted mb-1 fw-semibold">Action</label>
+                        <input type="text" name="action" class="form-control form-control-sm"
+                               placeholder="e.g. LEAVE_REQUEST" th:value="${selectedAction}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted mb-1 fw-semibold">Entity Type</label>
+                        <select name="entityType" class="form-select form-select-sm">
+                            <option value="">All Entities</option>
+                            <option value="LeaveRequest" th:selected="${selectedEntityType == 'LeaveRequest'}">LeaveRequest</option>
+                            <option value="LeaveBalance" th:selected="${selectedEntityType == 'LeaveBalance'}">LeaveBalance</option>
+                            <option value="DepartmentStaffingRule" th:selected="${selectedEntityType == 'DepartmentStaffingRule'}">DepartmentStaffingRule</option>
+                            <option value="LeavePolicy" th:selected="${selectedEntityType == 'LeavePolicy'}">LeavePolicy</option>
+                            <option value="Employee" th:selected="${selectedEntityType == 'Employee'}">Employee</option>
+                            <option value="Department" th:selected="${selectedEntityType == 'Department'}">Department</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small text-muted mb-1 fw-semibold">Department</label>
+                        <select name="departmentId" class="form-select form-select-sm">
+                            <option value="">All Departments</option>
+                            <option th:each="dept : ${departments}"
+                                    th:value="${dept.id}"
+                                    th:text="${dept.name}"
+                                    th:selected="${selectedDepartmentId == dept.id}">Engineering</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted mb-1 fw-semibold">From Date</label>
+                        <input type="date" name="fromDate" class="form-control form-control-sm"
+                               th:value="${selectedFromDate}">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted mb-1 fw-semibold">To Date</label>
+                        <input type="date" name="toDate" class="form-control form-control-sm"
+                               th:value="${selectedToDate}">
+                    </div>
+                    <div class="col-md-1 d-flex gap-1">
+                        <button type="submit" class="btn btn-primary btn-sm flex-grow-1" title="Apply Filter">
+                            <i class="bi bi-funnel"></i>
+                        </button>
+                        <a href="/audit-history" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Audit Table Card -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0 font-monospace small">
+                        <thead class="table-light font-sans-serif">
+                            <tr>
+                                <th style="width: 160px;">Timestamp</th>
+                                <th style="width: 220px;">Action</th>
+                                <th style="width: 160px;">Entity</th>
+                                <th style="width: 220px;">Actor Attribution</th>
+                                <th>Details</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${#lists.isEmpty(auditEvents)}">
+                                <td colspan="5" class="text-center py-5 text-muted font-sans-serif">
+                                    <i class="bi bi-journal-check fs-1 text-secondary d-block mb-2"></i>
+                                    <h6 class="fw-semibold">No Audit Events Found</h6>
+                                    <p class="small text-muted mb-0">No events matched the specified filter criteria.</p>
+                                </td>
+                            </tr>
+                            <tr th:each="ev : ${auditEvents}">
+                                <td class="text-muted" th:text="${#temporals.format(ev.eventTimestamp, 'yyyy-MM-dd HH:mm:ss')}">
+                                    2026-10-20 10:00:00
+                                </td>
+                                <td>
+                                    <span th:if="${#strings.contains(ev.action, 'OVERRIDDEN')}" class="badge bg-warning text-dark" th:text="${ev.action}">LEAVE_REQUEST_OVERRIDDEN</span>
+                                    <span th:if="${#strings.contains(ev.action, 'APPROVED') and !#strings.contains(ev.action, 'OVERRIDDEN')}" class="badge bg-success" th:text="${ev.action}">LEAVE_REQUEST_APPROVED</span>
+                                    <span th:if="${#strings.contains(ev.action, 'REJECTED')}" class="badge bg-danger" th:text="${ev.action}">LEAVE_REQUEST_REJECTED</span>
+                                    <span th:if="${#strings.contains(ev.action, 'CANCELLED')}" class="badge bg-secondary" th:text="${ev.action}">LEAVE_REQUEST_CANCELLED</span>
+                                    <span th:if="${#strings.contains(ev.action, 'SUBMITTED')}" class="badge bg-primary" th:text="${ev.action}">LEAVE_REQUEST_SUBMITTED</span>
+                                    <span th:if="${#strings.contains(ev.action, 'ADJUSTED')}" class="badge bg-info text-dark" th:text="${ev.action}">BALANCE_MANUALLY_ADJUSTED</span>
+                                    <span th:if="${#strings.contains(ev.action, 'INITIALIZED')}" class="badge bg-info text-dark" th:text="${ev.action}">BALANCE_INITIALIZED</span>
+                                    <span th:if="${#strings.contains(ev.action, 'SAVED') or #strings.contains(ev.action, 'CREATED') or #strings.contains(ev.action, 'UPDATED')}" class="badge bg-dark" th:text="${ev.action}">STAFFING_RULE_SAVED</span>
+                                    <span th:if="${!#strings.contains(ev.action, 'OVERRIDDEN') and !#strings.contains(ev.action, 'APPROVED') and !#strings.contains(ev.action, 'REJECTED') and !#strings.contains(ev.action, 'CANCELLED') and !#strings.contains(ev.action, 'SUBMITTED') and !#strings.contains(ev.action, 'ADJUSTED') and !#strings.contains(ev.action, 'INITIALIZED') and !#strings.contains(ev.action, 'SAVED') and !#strings.contains(ev.action, 'CREATED') and !#strings.contains(ev.action, 'UPDATED')}" class="badge bg-secondary" th:text="${ev.action}">OTHER</span>
+                                </td>
+                                <td>
+                                    <span class="d-block fw-semibold text-dark" th:text="${ev.entityType}">LeaveRequest</span>
+                                    <small class="text-muted" th:text="${ev.entityId}">LR-2026-0001</small>
+                                </td>
+                                <td>
+                                    <span th:if="${#strings.startsWith(ev.actor, 'DEV_UNAUTHENTICATED')}" class="badge bg-light text-dark border border-secondary-subtle font-monospace text-wrap text-start" th:text="${ev.actor}">
+                                        DEV_UNAUTHENTICATED: John Doe (EMP001)
+                                    </span>
+                                    <span th:if="${#strings.startsWith(ev.actor, 'SYSTEM_WORKFLOW')}" class="badge bg-secondary-subtle text-dark border border-secondary font-monospace" th:text="${ev.actor}">
+                                        SYSTEM_WORKFLOW: Engine
+                                    </span>
+                                    <span th:if="${!#strings.startsWith(ev.actor, 'DEV_UNAUTHENTICATED') and !#strings.startsWith(ev.actor, 'SYSTEM_WORKFLOW')}" class="badge bg-light text-dark border" th:text="${ev.actor}">
+                                        HR_ADMIN
+                                    </span>
+                                </td>
+                                <td class="text-wrap font-sans-serif" th:text="${ev.details}">
+                                    Approved 3.0 day(s) leave request: LR-2026-0001
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white-50 py-4 mt-auto">
+        <div class="container text-center">
+            <p class="mb-1 text-white">Employee Leave &amp; Workforce Availability Planning Platform</p>
+            <small class="text-secondary">BE CSE Major Project &bull; Built with Spring Boot 4 and Thymeleaf</small>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

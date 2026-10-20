@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Transaction Ledger - WorkforcePlan</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        .page-header {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a4296 100%);
+            color: #ffffff;
+            border-radius: 0.75rem;
+        }
+    </style>
+</head>
+<body class="bg-light d-flex flex-column min-vh-100">
+
+    <!-- Navigation Bar -->
+    <nav th:replace="~{fragments/navbar :: navbar('transactions')}"></nav>
+
+    <!-- Main Content -->
+    <main class="container my-4 flex-grow-1">
+
+        <!-- Page Header -->
+        <div class="page-header p-4 mb-4 shadow-sm">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-1 text-white-50">
+                            <li class="breadcrumb-item"><a href="/" class="text-white text-decoration-none">Home</a></li>
+                            <li class="breadcrumb-item"><a href="/leave-balances" class="text-white text-decoration-none">Leave Balances</a></li>
+                            <li class="breadcrumb-item active text-white" aria-current="page">Global Ledger</li>
+                        </ol>
+                    </nav>
+                    <h2 class="fw-bold mb-1"><i class="bi bi-journal-text me-2"></i>Global Transaction Ledger</h2>
+                    <p class="mb-0 text-white-50">Comprehensive enterprise audit journal for all balance initializations, manual adjustments, and deductions.</p>
+                </div>
+                <div>
+                    <a href="/leave-balances" class="btn btn-outline-light btn-sm"><i class="bi bi-arrow-left me-1"></i> Back to Balances</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Card -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <form th:action="@{/leave-balances/transactions}" method="get" class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label for="filterEmployee" class="form-label fw-semibold small text-muted text-uppercase">Employee</label>
+                        <select id="filterEmployee" name="employeeId" class="form-select">
+                            <option value="">-- All Employees --</option>
+                            <option th:each="emp : ${employees}"
+                                    th:value="${emp.id}"
+                                    th:text="${emp.fullName} + ' (' + ${emp.employeeId} + ')'"
+                                    th:selected="${selectedEmployeeId != null && selectedEmployeeId == emp.id}">
+                                Jane Doe
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filterType" class="form-label fw-semibold small text-muted text-uppercase">Leave Type</label>
+                        <select id="filterType" name="leaveTypeId" class="form-select">
+                            <option value="">-- All Leave Types --</option>
+                            <option th:each="ltype : ${leaveTypes}"
+                                    th:value="${ltype.id}"
+                                    th:text="${ltype.name} + ' (' + ${ltype.code} + ')'"
+                                    th:selected="${selectedLeaveTypeId != null && selectedLeaveTypeId == ltype.id}">
+                                Casual Leave (CL)
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="filterYear" class="form-label fw-semibold small text-muted text-uppercase">Year</label>
+                        <input type="number" id="filterYear" name="leaveYear" class="form-control font-monospace"
+                               th:value="${selectedYear}" placeholder="e.g. 2026">
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="bi bi-funnel-fill me-1"></i> Filter
+                        </button>
+                        <a href="/leave-balances/transactions" class="btn btn-outline-secondary" title="Reset filter">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Transactions Ledger Table Card -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h5 class="card-title fw-bold mb-0 text-dark">
+                    <i class="bi bi-clock-history me-2 text-primary"></i> Journal Ledger Entries
+                </h5>
+                <span class="badge bg-secondary-subtle text-secondary border px-3 py-2 rounded-pill" th:text="${transactions.size()} + ' Transactions'">0 Transactions</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Timestamp</th>
+                                <th scope="col">Employee</th>
+                                <th scope="col">Category &amp; Year</th>
+                                <th scope="col">Type</th>
+                                <th scope="col" class="text-center">Quantity</th>
+                                <th scope="col" class="text-center">Transition</th>
+                                <th scope="col">Reason &amp; Description</th>
+                                <th scope="col">Reference</th>
+                                <th scope="col">Actor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${transactions.empty}">
+                                <td colspan="9" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary"></i>
+                                    No transaction ledger records found matching the filter criteria.
+                                </td>
+                            </tr>
+                            <tr th:each="tx : ${transactions}">
+                                <td class="small font-monospace" th:text="${#temporals.format(tx.transactionTimestamp, 'yyyy-MM-dd HH:mm:ss')}">
+                                    2026-10-20 18:30:00
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-dark" th:text="${tx.employee.fullName}">Jane Doe</div>
+                                    <small class="text-muted font-monospace" th:text="${tx.employee.employeeId}">EMP-001</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle" th:text="${tx.leaveType.name} + ' (' + ${tx.leaveType.code} + ')'">CL</span>
+                                    <div class="text-muted small font-monospace" th:text="'Year ' + ${tx.leaveYear}">Year 2026</div>
+                                </td>
+                                <td>
+                                    <span th:if="${tx.transactionType.name() == 'ENTITLEMENT_GRANT'}" class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                        <i class="bi bi-calendar-plus me-1"></i> Grant
+                                    </span>
+                                    <span th:if="${tx.transactionType.name() == 'CARRY_FORWARD'}" class="badge bg-info-subtle text-info border border-info-subtle">
+                                        <i class="bi bi-arrow-repeat me-1"></i> Carry-Fwd
+                                    </span>
+                                    <span th:if="${tx.transactionType.name() == 'MANUAL_ADJUSTMENT_CREDIT'}" class="badge bg-success-subtle text-success border border-success-subtle">
+                                        <i class="bi bi-plus-lg me-1"></i> Credit Adj
+                                    </span>
+                                    <span th:if="${tx.transactionType.name() == 'MANUAL_ADJUSTMENT_DEBIT'}" class="badge bg-danger-subtle text-danger border border-danger-subtle">
+                                        <i class="bi bi-dash-lg me-1"></i> Debit Adj
+                                    </span>
+                                    <span th:if="${tx.transactionType.name() == 'APPROVED_LEAVE_DEDUCTION'}" class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                                        <i class="bi bi-box-arrow-right me-1"></i> Leave Taken
+                                    </span>
+                                    <span th:if="${tx.transactionType.name() == 'REVERSAL_CORRECTION'}" class="badge bg-secondary-subtle text-secondary border border-secondary-subtle">
+                                        Reversal
+                                    </span>
+                                </td>
+                                <td class="text-center font-monospace fw-bold">
+                                    <span th:if="${tx.transactionType.name() == 'MANUAL_ADJUSTMENT_DEBIT' or tx.transactionType.name() == 'APPROVED_LEAVE_DEDUCTION'}" class="text-danger" th:text="'-' + ${tx.amount} + ' d'">-1.00 d</span>
+                                    <span th:if="${tx.transactionType.name() != 'MANUAL_ADJUSTMENT_DEBIT' and tx.transactionType.name() != 'APPROVED_LEAVE_DEDUCTION'}" class="text-success" th:text="'+' + ${tx.amount} + ' d'">+1.00 d</span>
+                                </td>
+                                <td class="text-center font-monospace small">
+                                    <span th:text="${tx.previousBalance}">0.00</span>
+                                    <i class="bi bi-arrow-right text-muted mx-1"></i>
+                                    <span class="fw-bold" th:text="${tx.resultingBalance}">12.00</span>
+                                </td>
+                                <td>
+                                    <span class="text-dark" th:text="${tx.reason}">Reason description</span>
+                                </td>
+                                <td class="font-monospace small text-muted" th:text="${tx.referenceNumber != null && !tx.referenceNumber.isEmpty() ? tx.referenceNumber : '—'}">
+                                    REF-001
+                                </td>
+                                <td class="small">
+                                    <span class="badge bg-light text-dark border" th:text="${tx.actor}">HR_ADMIN</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white-50 py-3 mt-auto">
+        <div class="container text-center">
+            <small>Employee Leave &amp; Workforce Availability Planning Platform &bull; Phase 4 Global Ledger</small>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

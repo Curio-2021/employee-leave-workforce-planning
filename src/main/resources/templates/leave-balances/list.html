@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Leave Balances - WorkforcePlan</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        .page-header {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a4296 100%);
+            color: #ffffff;
+            border-radius: 0.75rem;
+        }
+        .balance-pill {
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+    </style>
+</head>
+<body class="bg-light d-flex flex-column min-vh-100">
+
+    <!-- Navigation Bar -->
+    <nav th:replace="~{fragments/navbar :: navbar('leave-balances')}"></nav>
+
+    <!-- Main Content -->
+    <main class="container my-4 flex-grow-1">
+
+        <!-- Page Header -->
+        <div class="page-header p-4 mb-4 shadow-sm">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-1 text-white-50">
+                            <li class="breadcrumb-item"><a href="/" class="text-white text-decoration-none">Home</a></li>
+                            <li class="breadcrumb-item active text-white" aria-current="page">Leave Balances</li>
+                        </ol>
+                    </nav>
+                    <h2 class="fw-bold mb-1"><i class="bi bi-wallet2 me-2"></i>Employee Leave Balances</h2>
+                    <p class="mb-0 text-white-50">Track carried-forward quotas, policy grants, manual adjustments, deductions, and current available days.</p>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="/leave-balances/initialize" class="btn btn-light fw-bold shadow-sm">
+                        <i class="bi bi-plus-circle-fill me-1 text-primary"></i> Grant Entitlement
+                    </a>
+                    <a href="/leave-balances/adjust" class="btn btn-warning fw-semibold shadow-sm">
+                        <i class="bi bi-sliders2-vertical me-1"></i> Manual Adjustment
+                    </a>
+                    <a href="/leave-balances/transactions" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-journal-text me-1"></i> Full Ledger
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flash Messages -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <span th:text="${successMessage}">Operation successful!</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Filter Card -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <form th:action="@{/leave-balances}" method="get" class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label for="filterEmployee" class="form-label fw-semibold small text-muted text-uppercase">Employee</label>
+                        <select id="filterEmployee" name="employeeId" class="form-select">
+                            <option value="">-- All Employees --</option>
+                            <option th:each="emp : ${employees}"
+                                    th:value="${emp.id}"
+                                    th:text="${emp.fullName} + ' (' + ${emp.employeeId} + ')'"
+                                    th:selected="${selectedEmployeeId != null && selectedEmployeeId == emp.id}">
+                                Jane Doe
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filterDept" class="form-label fw-semibold small text-muted text-uppercase">Department</label>
+                        <select id="filterDept" name="departmentId" class="form-select">
+                            <option value="">-- All Departments --</option>
+                            <option th:each="dept : ${departments}"
+                                    th:value="${dept.id}"
+                                    th:text="${dept.name}"
+                                    th:selected="${selectedDepartmentId != null && selectedDepartmentId == dept.id}">
+                                Engineering
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="filterType" class="form-label fw-semibold small text-muted text-uppercase">Leave Type</label>
+                        <select id="filterType" name="leaveTypeId" class="form-select">
+                            <option value="">-- All Leave Types --</option>
+                            <option th:each="ltype : ${leaveTypes}"
+                                    th:value="${ltype.id}"
+                                    th:text="${ltype.name} + ' (' + ${ltype.code} + ')'"
+                                    th:selected="${selectedLeaveTypeId != null && selectedLeaveTypeId == ltype.id}">
+                                Casual Leave (CL)
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-1">
+                        <label for="filterYear" class="form-label fw-semibold small text-muted text-uppercase">Year</label>
+                        <input type="number" id="filterYear" name="leaveYear" class="form-control font-monospace"
+                               th:value="${selectedYear != null ? selectedYear : 2026}" min="2000" max="2100">
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="bi bi-funnel-fill me-1"></i> Filter
+                        </button>
+                        <a href="/leave-balances" class="btn btn-outline-secondary" title="Reset filter">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Balance Table Card -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h5 class="card-title fw-bold mb-0 text-dark">
+                    <i class="bi bi-table me-2 text-primary"></i> Staff Balance Summary
+                </h5>
+                <span class="badge bg-secondary-subtle text-secondary border px-3 py-2 rounded-pill" th:text="${balances.size()} + ' Records Found'">0 Records</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Staff Member</th>
+                                <th scope="col">Leave Type</th>
+                                <th scope="col">Year</th>
+                                <th scope="col" class="text-center" title="Carried over from prior year">Brought Fwd</th>
+                                <th scope="col" class="text-center" title="Annual entitlement granted via policy">Entitlement</th>
+                                <th scope="col" class="text-center" title="Manual credits minus debits">Adjustments</th>
+                                <th scope="col" class="text-center" title="Approved leaves taken">Used</th>
+                                <th scope="col" class="text-center" title="Available = (Brought Fwd + Entitlement + Adjustments) - Used">Available</th>
+                                <th scope="col" class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${balances.empty}">
+                                <td colspan="9" class="text-center py-5 text-muted">
+                                    <i class="bi bi-wallet fs-1 d-block mb-2 text-secondary"></i>
+                                    No leave balance records found for the selected filter.
+                                    <div class="mt-2">
+                                        <a href="/leave-balances/initialize" class="btn btn-primary btn-sm">
+                                            <i class="bi bi-plus-circle me-1"></i> Grant Entitlement
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:each="b : ${balances}">
+                                <td>
+                                    <div class="fw-bold text-dark" th:text="${b.employee.fullName}">Jane Doe</div>
+                                    <small class="text-muted font-monospace" th:text="${b.employee.employeeId}">EMP-001</small>
+                                    <span class="badge bg-light text-secondary border ms-1" th:text="${b.employee.department != null ? b.employee.department.name : 'No Dept'}">Dept</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle" th:text="${b.leaveType.name} + ' (' + ${b.leaveType.code} + ')'">
+                                        Casual Leave (CL)
+                                    </span>
+                                    <div th:if="${b.applicablePolicy != null}" class="text-muted small" style="font-size: 0.75rem;">
+                                        <i class="bi bi-shield-check text-success"></i> <span th:text="${b.applicablePolicy.policyName}">Policy</span>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border font-monospace" th:text="${b.leaveYear}">2026</span>
+                                </td>
+                                <td class="text-center font-monospace" th:text="${b.carriedForward}">0.00</td>
+                                <td class="text-center font-monospace fw-semibold" th:text="${b.grantedEntitlement}">12.00</td>
+                                <td class="text-center font-monospace">
+                                    <span class="text-success" th:text="'+' + ${b.adjustmentCredits}">+0.00</span> /
+                                    <span class="text-danger" th:text="'-' + ${b.adjustmentDebits}">-0.00</span>
+                                </td>
+                                <td class="text-center font-monospace text-danger fw-semibold" th:text="${b.usedLeave}">0.00</td>
+                                <td class="text-center">
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 balance-pill font-monospace"
+                                          th:text="${b.availableBalance} + ' Days'">
+                                        12.00 Days
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a th:href="@{/leave-balances/adjust(balanceId=${b.id})}" class="btn btn-outline-warning" title="Adjust Balance">
+                                            <i class="bi bi-sliders"></i> Adjust
+                                        </a>
+                                        <a th:href="@{/leave-balances/{id}/transactions(id=${b.id})}" class="btn btn-outline-secondary" title="View Transaction Ledger">
+                                            <i class="bi bi-journal-text"></i> Ledger
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white-50 py-3 mt-auto">
+        <div class="container text-center">
+            <small>Employee Leave &amp; Workforce Availability Planning Platform &bull; Phase 4 Leave Balances</small>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

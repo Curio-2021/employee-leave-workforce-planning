@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Employee Management - WorkforcePlan</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        .page-header {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a4296 100%);
+            color: #ffffff;
+            border-radius: 0.75rem;
+        }
+    </style>
+</head>
+<body class="bg-light d-flex flex-column min-vh-100">
+
+    <!-- Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold d-flex align-items-center" href="/">
+                <i class="bi bi-calendar2-check-fill me-2 text-primary"></i>
+                <span>WorkforcePlan</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu" aria-controls="navMenu" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navMenu">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/"><i class="bi bi-speedometer2 me-1"></i> Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/departments"><i class="bi bi-building me-1"></i> Departments</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="/employees"><i class="bi bi-people-fill me-1"></i> Employees</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true"><i class="bi bi-card-checklist me-1"></i> Leave Requests</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true"><i class="bi bi-calendar3-range me-1"></i> Availability</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true"><i class="bi bi-graph-up me-1"></i> Reports</a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">
+                        <i class="bi bi-circle-fill me-1" style="font-size: 0.55rem;"></i> System Online
+                    </span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container my-4 flex-grow-1">
+
+        <!-- Page Header -->
+        <div class="page-header p-4 mb-4 shadow-sm">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-1 text-white-50">
+                            <li class="breadcrumb-item"><a href="/" class="text-white text-decoration-none">Home</a></li>
+                            <li class="breadcrumb-item active text-white" aria-current="page">Employees</li>
+                        </ol>
+                    </nav>
+                    <h2 class="fw-bold mb-1"><i class="bi bi-people-fill me-2"></i>Employee Directory</h2>
+                    <p class="mb-0 text-white-50">Manage workforce profiles, department assignments, and reporting hierarchies.</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="/employees/new" class="btn btn-light fw-bold shadow-sm">
+                        <i class="bi bi-person-plus-fill me-1 text-primary"></i> Add Employee
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Flash Message -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <span th:text="${successMessage}">Operation successful!</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Filter Bar Card -->
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-body">
+                <form th:action="@{/employees}" method="get" class="row g-3 align-items-end">
+                    <div class="col-md-5">
+                        <label for="filterDepartment" class="form-label fw-semibold small text-muted text-uppercase">Department</label>
+                        <select id="filterDepartment" name="departmentId" class="form-select">
+                            <option value="">-- All Departments --</option>
+                            <option th:each="dept : ${departments}"
+                                    th:value="${dept.id}"
+                                    th:text="${dept.name}"
+                                    th:selected="${selectedDepartmentId != null && selectedDepartmentId == dept.id}">
+                                Engineering
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="filterStatus" class="form-label fw-semibold small text-muted text-uppercase">Status</label>
+                        <select id="filterStatus" name="status" class="form-select">
+                            <option value="">-- All Statuses --</option>
+                            <option th:each="st : ${employmentStatuses}"
+                                    th:value="${st}"
+                                    th:text="${st.displayName}"
+                                    th:selected="${selectedStatus != null && selectedStatus == st}">
+                                Active
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="bi bi-funnel-fill me-1"></i> Filter
+                        </button>
+                        <a href="/employees" class="btn btn-outline-secondary" title="Reset filter">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Employees Table Card -->
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                <h5 class="card-title fw-bold mb-0 text-dark">
+                    <i class="bi bi-card-list me-2 text-primary"></i> Staff Members
+                </h5>
+                <span class="badge bg-secondary-subtle text-secondary border px-3 py-2 rounded-pill" th:text="${employees.size()} + ' Employees Found'">0 Employees Found</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Employee ID</th>
+                                <th scope="col">Full Name &amp; Email</th>
+                                <th scope="col">Department</th>
+                                <th scope="col">Type</th>
+                                <th scope="col">Joining Date</th>
+                                <th scope="col">Reporting Manager</th>
+                                <th scope="col">Status</th>
+                                <th scope="col" class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${employees.empty}">
+                                <td colspan="8" class="text-center py-5 text-muted">
+                                    <i class="bi bi-person-x fs-1 d-block mb-2 text-secondary"></i>
+                                    No employees found matching the selected filter criteria.
+                                    <div class="mt-2">
+                                        <a href="/employees/new" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i> Add an Employee</a>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr th:each="emp : ${employees}">
+                                <td>
+                                    <span class="badge bg-light text-dark border font-monospace px-2 py-1" th:text="${emp.employeeId}">EMP-001</span>
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-dark" th:text="${emp.fullName}">Jane Doe</div>
+                                    <small class="text-muted"><i class="bi bi-envelope me-1"></i><span th:text="${emp.email}">jane@example.com</span></small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle" th:text="${emp.department != null ? emp.department.name : '—'}">Engineering</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-secondary border" th:text="${emp.employmentType != null ? emp.employmentType.displayName : '—'}">Full Time</span>
+                                </td>
+                                <td class="text-secondary small" th:text="${emp.joiningDate}">2024-01-15</td>
+                                <td>
+                                    <span th:if="${emp.reportingManager != null}" class="text-dark small">
+                                        <i class="bi bi-person-check text-primary me-1"></i>
+                                        <span th:text="${emp.reportingManager.fullName}">John Smith</span>
+                                    </span>
+                                    <span th:if="${emp.reportingManager == null}" class="badge bg-light text-muted border">None (Lead)</span>
+                                </td>
+                                <td>
+                                    <span th:if="${emp.employmentStatus.name() == 'ACTIVE'}" class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                        <i class="bi bi-check-circle-fill me-1"></i> Active
+                                    </span>
+                                    <span th:if="${emp.employmentStatus.name() == 'INACTIVE'}" class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2 py-1">
+                                        <i class="bi bi-dash-circle me-1"></i> Inactive
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <a th:href="@{/employees/{id}/edit(id=${emp.id})}" class="btn btn-outline-primary" title="Edit Employee Profile">
+                                            <i class="bi bi-pencil-square"></i> Edit
+                                        </a>
+                                        <form th:action="@{/employees/{id}/toggle-status(id=${emp.id})}" method="post" class="d-inline"
+                                              th:onsubmit="return confirm('Are you sure you want to change the status of this employee? Historical records will be retained.');">
+                                            <button type="submit"
+                                                    class="btn btn-sm"
+                                                    th:classappend="${emp.employmentStatus.name() == 'ACTIVE' ? 'btn-outline-danger' : 'btn-outline-success'}"
+                                                    th:title="${emp.employmentStatus.name() == 'ACTIVE' ? 'Deactivate Employee' : 'Activate Employee'}">
+                                                <i th:class="${emp.employmentStatus.name() == 'ACTIVE' ? 'bi bi-person-slash' : 'bi bi-person-check'}"></i>
+                                                <span th:text="${emp.employmentStatus.name() == 'ACTIVE' ? 'Deactivate' : 'Activate'}"></span>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white-50 py-3 mt-auto">
+        <div class="container text-center">
+            <small>Employee Leave &amp; Workforce Availability Planning Platform &bull; Phase 2 Employee Management</small>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

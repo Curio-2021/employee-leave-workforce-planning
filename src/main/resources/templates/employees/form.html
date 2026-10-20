@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle}">Employee Form - WorkforcePlan</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        .page-header {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a4296 100%);
+            color: #ffffff;
+            border-radius: 0.75rem;
+        }
+    </style>
+</head>
+<body class="bg-light d-flex flex-column min-vh-100">
+
+    <!-- Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold d-flex align-items-center" href="/">
+                <i class="bi bi-calendar2-check-fill me-2 text-primary"></i>
+                <span>WorkforcePlan</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu" aria-controls="navMenu" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navMenu">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/"><i class="bi bi-speedometer2 me-1"></i> Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/departments"><i class="bi bi-building me-1"></i> Departments</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" aria-current="page" href="/employees"><i class="bi bi-people-fill me-1"></i> Employees</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true"><i class="bi bi-card-checklist me-1"></i> Leave Requests</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true"><i class="bi bi-calendar3-range me-1"></i> Availability</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true"><i class="bi bi-graph-up me-1"></i> Reports</a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill">
+                        <i class="bi bi-circle-fill me-1" style="font-size: 0.55rem;"></i> System Online
+                    </span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container my-4 flex-grow-1">
+
+        <!-- Page Header -->
+        <div class="page-header p-4 mb-4 shadow-sm">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-1 text-white-50">
+                            <li class="breadcrumb-item"><a href="/" class="text-white text-decoration-none">Home</a></li>
+                            <li class="breadcrumb-item"><a href="/employees" class="text-white text-decoration-none">Employees</a></li>
+                            <li class="breadcrumb-item active text-white" aria-current="page" th:text="${isEdit ? 'Edit Profile' : 'New Registration'}">Form</li>
+                        </ol>
+                    </nav>
+                    <h2 class="fw-bold mb-1" th:text="${pageTitle}">Add New Employee</h2>
+                    <p class="mb-0 text-white-50">Enter personal, departmental, and organizational reporting details.</p>
+                </div>
+                <div>
+                    <a href="/employees" class="btn btn-outline-light btn-sm"><i class="bi bi-arrow-left me-1"></i> Back to Directory</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Employee Form Card -->
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h5 class="card-title fw-bold mb-0 text-primary">
+                            <i class="bi bi-person-lines-fill me-2"></i> Employee Information Form
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <form th:action="${isEdit} ? @{/employees/{id}/edit(id=${employeeDTO.id})} : @{/employees}"
+                              th:object="${employeeDTO}"
+                              method="post"
+                              class="needs-validation">
+
+                            <!-- Global Errors Banner -->
+                            <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                <span th:each="err : ${#fields.globalErrors()}" th:text="${err}">Error</span>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+
+                            <input type="hidden" th:if="${isEdit}" th:field="*{id}" />
+
+                            <!-- Section 1: Basic Identity -->
+                            <h6 class="text-uppercase text-muted fw-bold mb-3 small" style="letter-spacing: 0.05em;">
+                                <i class="bi bi-person-badge me-1"></i> Identity &amp; Contact
+                            </h6>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-4">
+                                    <label for="employeeId" class="form-label fw-semibold">Employee ID <span class="text-danger">*</span></label>
+                                    <input type="text"
+                                           id="employeeId"
+                                           th:field="*{employeeId}"
+                                           class="form-control font-monospace"
+                                           th:classappend="${#fields.hasErrors('employeeId')} ? 'is-invalid' : ''"
+                                           placeholder="e.g. EMP-101"
+                                           required>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('employeeId')}" th:errors="*{employeeId}">
+                                        Employee ID error
+                                    </div>
+                                    <small class="form-text text-muted">Unique organization alphanumeric code.</small>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label for="fullName" class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+                                    <input type="text"
+                                           id="fullName"
+                                           th:field="*{fullName}"
+                                           class="form-control"
+                                           th:classappend="${#fields.hasErrors('fullName')} ? 'is-invalid' : ''"
+                                           placeholder="e.g. Jane Doe"
+                                           required>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}">
+                                        Full name error
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label for="email" class="form-label fw-semibold">Corporate Email <span class="text-danger">*</span></label>
+                                    <input type="email"
+                                           id="email"
+                                           th:field="*{email}"
+                                           class="form-control"
+                                           th:classappend="${#fields.hasErrors('email')} ? 'is-invalid' : ''"
+                                           placeholder="jane.doe@workforce.com"
+                                           required>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">
+                                        Email error
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="my-4 text-muted">
+
+                            <!-- Section 2: Organizational Placement -->
+                            <h6 class="text-uppercase text-muted fw-bold mb-3 small" style="letter-spacing: 0.05em;">
+                                <i class="bi bi-briefcase me-1"></i> Department &amp; Employment Details
+                            </h6>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label for="departmentId" class="form-label fw-semibold">Department <span class="text-danger">*</span></label>
+                                    <select id="departmentId"
+                                            th:field="*{departmentId}"
+                                            class="form-select"
+                                            th:classappend="${#fields.hasErrors('departmentId')} ? 'is-invalid' : ''"
+                                            required>
+                                        <option value="">-- Choose Department --</option>
+                                        <option th:each="dept : ${departments}"
+                                                th:value="${dept.id}"
+                                                th:text="${dept.name}">
+                                            Engineering
+                                        </option>
+                                    </select>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('departmentId')}" th:errors="*{departmentId}">
+                                        Department error
+                                    </div>
+                                    <small class="form-text text-muted" th:if="${departments.empty}">
+                                        No departments found! Please <a href="/departments" target="_blank">create a department</a> first.
+                                    </small>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <label for="employmentType" class="form-label fw-semibold">Employment Type <span class="text-danger">*</span></label>
+                                    <select id="employmentType"
+                                            th:field="*{employmentType}"
+                                            class="form-select"
+                                            th:classappend="${#fields.hasErrors('employmentType')} ? 'is-invalid' : ''"
+                                            required>
+                                        <option value="">-- Select Type --</option>
+                                        <option th:each="type : ${employmentTypes}"
+                                                th:value="${type}"
+                                                th:text="${type.displayName}">
+                                            Full Time
+                                        </option>
+                                    </select>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('employmentType')}" th:errors="*{employmentType}">
+                                        Employment type error
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label for="joiningDate" class="form-label fw-semibold">Joining Date <span class="text-danger">*</span></label>
+                                    <input type="date"
+                                           id="joiningDate"
+                                           th:field="*{joiningDate}"
+                                           class="form-control"
+                                           th:classappend="${#fields.hasErrors('joiningDate')} ? 'is-invalid' : ''"
+                                           required>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('joiningDate')}" th:errors="*{joiningDate}">
+                                        Joining date error
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label for="employmentStatus" class="form-label fw-semibold">Employment Status <span class="text-danger">*</span></label>
+                                    <select id="employmentStatus"
+                                            th:field="*{employmentStatus}"
+                                            class="form-select"
+                                            th:classappend="${#fields.hasErrors('employmentStatus')} ? 'is-invalid' : ''"
+                                            required>
+                                        <option th:each="status : ${employmentStatuses}"
+                                                th:value="${status}"
+                                                th:text="${status.displayName}">
+                                            Active
+                                        </option>
+                                    </select>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('employmentStatus')}" th:errors="*{employmentStatus}">
+                                        Status error
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <label for="reportingManagerId" class="form-label fw-semibold">Reporting Manager</label>
+                                    <select id="reportingManagerId"
+                                            th:field="*{reportingManagerId}"
+                                            class="form-select"
+                                            th:classappend="${#fields.hasErrors('reportingManagerId')} ? 'is-invalid' : ''">
+                                        <option value="">-- None (Direct / Lead) --</option>
+                                        <option th:each="mgr : ${managers}"
+                                                th:value="${mgr.id}"
+                                                th:text="${mgr.fullName} + ' (' + ${mgr.employeeId} + ' - ' + ${mgr.department.name} + ')'">
+                                            John Smith
+                                        </option>
+                                    </select>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('reportingManagerId')}" th:errors="*{reportingManagerId}">
+                                        Reporting manager error
+                                    </div>
+                                    <small class="form-text text-muted">Optional. Employees cannot report to themselves.</small>
+                                </div>
+                            </div>
+
+                            <!-- Buttons -->
+                            <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                                <a href="/employees" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle me-1"></i> Cancel
+                                </a>
+                                <button type="submit" class="btn btn-primary px-4 fw-semibold">
+                                    <i class="bi bi-check2-circle me-1"></i>
+                                    <span th:text="${isEdit ? 'Update Employee' : 'Save Employee'}">Submit</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white-50 py-3 mt-auto">
+        <div class="container text-center">
+            <small>Employee Leave &amp; Workforce Availability Planning Platform &bull; Phase 2</small>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

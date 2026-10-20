@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Policy Exceptions &amp; Overrides - WorkforcePlan</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        .exception-card {
+            border-left: 4px solid #dc3545;
+            transition: transform 0.15s ease-in-out;
+        }
+        .exception-card:hover {
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="bg-light d-flex flex-column min-vh-100">
+
+    <!-- Navigation Bar -->
+    <nav th:replace="~{fragments/navbar :: navbar('policy-exceptions')}"></nav>
+
+    <!-- Main Container -->
+    <main class="container my-4 flex-grow-1">
+
+        <!-- Page Header -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1 small">
+                        <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Dashboard</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">Policy Exceptions</li>
+                    </ol>
+                </nav>
+                <h2 class="fw-bold mb-1 d-flex align-items-center">
+                    <i class="bi bi-exclamation-diamond-fill me-2 text-danger"></i> Policy Exceptions &amp; Overrides
+                </h2>
+                <p class="text-muted mb-0 small">
+                    Audit log of approved staffing overrides, pending shortage risks, and manual leave balance adjustments.
+                </p>
+            </div>
+            <div>
+                <a href="/audit-history" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-shield-shaded me-1"></i> System Audit Log
+                </a>
+            </div>
+        </div>
+
+        <!-- KPI Summary Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-sm-6 col-lg-3">
+                <div class="card exception-card shadow-sm h-100" style="border-left-color: #6c757d;">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted text-uppercase fw-semibold">Total Exceptions</small>
+                                <h3 class="fw-bold mb-0 text-dark" th:text="${counts != null ? counts['TOTAL'] : 0}">0</h3>
+                            </div>
+                            <span class="p-2 bg-secondary-subtle text-secondary rounded-3">
+                                <i class="bi bi-collection fs-4"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="card exception-card shadow-sm h-100" style="border-left-color: #ffc107;">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted text-uppercase fw-semibold">Staffing Overrides</small>
+                                <h3 class="fw-bold mb-0 text-warning" th:text="${counts != null ? counts['AUTHORIZED_OVERRIDE'] : 0}">0</h3>
+                            </div>
+                            <span class="p-2 bg-warning-subtle text-warning rounded-3">
+                                <i class="bi bi-shield-exclamation fs-4"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="card exception-card shadow-sm h-100" style="border-left-color: #dc3545;">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted text-uppercase fw-semibold">Shortage Risks</small>
+                                <h3 class="fw-bold mb-0 text-danger" th:text="${counts != null ? counts['PENDING_SHORTAGE_RISK'] : 0}">0</h3>
+                            </div>
+                            <span class="p-2 bg-danger-subtle text-danger rounded-3">
+                                <i class="bi bi-cone-striped fs-4"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-sm-6 col-lg-3">
+                <div class="card exception-card shadow-sm h-100" style="border-left-color: #0dcaf0;">
+                    <div class="card-body p-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted text-uppercase fw-semibold">Manual Adjustments</small>
+                                <h3 class="fw-bold mb-0 text-info" th:text="${counts != null ? counts['ADMINISTRATIVE_ADJUSTMENT'] : 0}">0</h3>
+                            </div>
+                            <span class="p-2 bg-info-subtle text-info rounded-3">
+                                <i class="bi bi-wallet2 fs-4"></i>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filter Card -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-3">
+                <form method="get" action="/policy-exceptions" class="row g-2 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted mb-1 fw-semibold">Exception Category</label>
+                        <select name="category" class="form-select form-select-sm">
+                            <option value="">All Categories</option>
+                            <option value="AUTHORIZED_OVERRIDE" th:selected="${selectedCategory == 'AUTHORIZED_OVERRIDE'}">Authorized Staffing Overrides</option>
+                            <option value="PENDING_SHORTAGE_RISK" th:selected="${selectedCategory == 'PENDING_SHORTAGE_RISK'}">Pending Shortage Risks</option>
+                            <option value="ADMINISTRATIVE_ADJUSTMENT" th:selected="${selectedCategory == 'ADMINISTRATIVE_ADJUSTMENT'}">Administrative Balance Adjustments</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small text-muted mb-1 fw-semibold">Department</label>
+                        <select name="departmentId" class="form-select form-select-sm">
+                            <option value="">All Departments</option>
+                            <option th:each="dept : ${departments}"
+                                    th:value="${dept.id}"
+                                    th:text="${dept.name}"
+                                    th:selected="${selectedDepartmentId == dept.id}">Engineering</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label small text-muted mb-1 fw-semibold">Leave Year</label>
+                        <input type="number" name="year" class="form-control form-control-sm"
+                               placeholder="e.g. 2026" th:value="${selectedYear}">
+                    </div>
+                    <div class="col-md-2 d-flex gap-1">
+                        <button type="submit" class="btn btn-primary btn-sm flex-grow-1">
+                            <i class="bi bi-funnel me-1"></i> Filter
+                        </button>
+                        <a href="/policy-exceptions" class="btn btn-outline-secondary btn-sm" title="Clear Filters">
+                            <i class="bi bi-arrow-counterclockwise"></i>
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Exceptions Table Card -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 110px;">Severity</th>
+                                <th>Category</th>
+                                <th>Reference</th>
+                                <th>Employee / Dept</th>
+                                <th>Details / Impact</th>
+                                <th>Justification / Reason</th>
+                                <th style="width: 140px;">Timestamp</th>
+                                <th class="text-end" style="width: 110px;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${#lists.isEmpty(exceptions)}">
+                                <td colspan="8" class="text-center py-5 text-muted">
+                                    <i class="bi bi-check2-circle fs-1 text-success d-block mb-2"></i>
+                                    <h6 class="fw-semibold">No Policy Exceptions Found</h6>
+                                    <p class="small text-muted mb-0">No staffing overrides, pending risks, or manual adjustments match the filter criteria.</p>
+                                </td>
+                            </tr>
+                            <tr th:each="ex : ${exceptions}">
+                                <td>
+                                    <span th:if="${ex.severity == 'CRITICAL'}" class="badge bg-danger">Critical</span>
+                                    <span th:if="${ex.severity == 'HIGH'}" class="badge bg-danger-subtle text-danger border border-danger-subtle">High</span>
+                                    <span th:if="${ex.severity == 'WARNING'}" class="badge bg-warning-subtle text-warning border border-warning-subtle">Warning</span>
+                                    <span th:if="${ex.severity == 'INFO'}" class="badge bg-info-subtle text-info border border-info-subtle">Info</span>
+                                </td>
+                                <td>
+                                    <span class="fw-semibold small d-block" th:text="${ex.categoryDisplayName}">Authorized Override</span>
+                                    <code class="text-muted small" th:text="${ex.category}">AUTHORIZED_OVERRIDE</code>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border font-monospace" th:text="${ex.referenceNumber}">LR-2026-0001</span>
+                                </td>
+                                <td>
+                                    <span class="fw-semibold d-block" th:text="${ex.employeeName}">John Doe</span>
+                                    <small class="text-muted" th:text="${ex.employeeIdentifier + ' &bull; ' + ex.departmentName}">EMP001 &bull; Engineering</small>
+                                </td>
+                                <td>
+                                    <small th:text="${ex.details}">Approved 3.0 days leave despite staffing conflict.</small>
+                                </td>
+                                <td>
+                                    <div class="p-2 bg-light rounded small border border-light-subtle" th:text="${ex.justification}">
+                                        Critical delivery covered by contractor.
+                                    </div>
+                                </td>
+                                <td>
+                                    <small class="text-muted" th:text="${#temporals.format(ex.timestamp, 'yyyy-MM-dd HH:mm')}">2026-10-20 10:00</small>
+                                </td>
+                                <td class="text-end">
+                                    <a th:href="${ex.actionUrl}" class="btn btn-outline-primary btn-sm">
+                                        <i class="bi bi-box-arrow-up-right me-1"></i> Review
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white-50 py-4 mt-auto">
+        <div class="container text-center">
+            <p class="mb-1 text-white">Employee Leave &amp; Workforce Availability Planning Platform</p>
+            <small class="text-secondary">BE CSE Major Project &bull; Built with Spring Boot 4 and Thymeleaf</small>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

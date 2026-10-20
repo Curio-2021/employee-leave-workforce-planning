@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grant Entitlements - WorkforcePlan</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <style>
+        .page-header {
+            background: linear-gradient(135deg, #0d6efd 0%, #0a4296 100%);
+            color: #ffffff;
+            border-radius: 0.75rem;
+        }
+    </style>
+</head>
+<body class="bg-light d-flex flex-column min-vh-100">
+
+    <!-- Navigation Bar -->
+    <nav th:replace="~{fragments/navbar :: navbar('leave-balances')}"></nav>
+
+    <!-- Main Content -->
+    <main class="container my-4 flex-grow-1">
+
+        <!-- Page Header -->
+        <div class="page-header p-4 mb-4 shadow-sm">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-1 text-white-50">
+                            <li class="breadcrumb-item"><a href="/" class="text-white text-decoration-none">Home</a></li>
+                            <li class="breadcrumb-item"><a href="/leave-balances" class="text-white text-decoration-none">Leave Balances</a></li>
+                            <li class="breadcrumb-item active text-white" aria-current="page">Initialize</li>
+                        </ol>
+                    </nav>
+                    <h2 class="fw-bold mb-1"><i class="bi bi-calendar2-check-fill me-2"></i>Policy-Based Entitlement Initialization</h2>
+                    <p class="mb-0 text-white-50">Grant annual leave allowances and process carry-over balances matching the employee's department and employment type.</p>
+                </div>
+                <div>
+                    <a href="/leave-balances" class="btn btn-outline-light btn-sm"><i class="bi bi-arrow-left me-1"></i> Back to Balances</a>
+                </div>
+            </div>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h5 class="card-title fw-bold mb-0 text-primary">
+                            <i class="bi bi-gear-wide-connected me-2"></i> Entitlement Grant Parameters
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <form th:action="@{/leave-balances/initialize}" th:object="${initializationDTO}" method="post">
+
+                            <!-- Global Errors Banner -->
+                            <div th:if="${#fields.hasGlobalErrors()}" class="alert alert-danger alert-dismissible fade show shadow-sm mb-4" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                <span th:each="err : ${#fields.globalErrors()}" th:text="${err}">Error</span>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="employeeSelect" class="form-label fw-semibold">Target Employee <span class="text-danger">*</span></label>
+                                <select id="employeeSelect"
+                                        th:field="*{employeeId}"
+                                        class="form-select"
+                                        th:classappend="${#fields.hasErrors('employeeId')} ? 'is-invalid' : ''"
+                                        required>
+                                    <option value="">-- Choose Staff Member --</option>
+                                    <option th:each="emp : ${employees}"
+                                            th:value="${emp.id}"
+                                            th:text="${emp.fullName} + ' (' + ${emp.employeeId} + ' - ' + (${emp.department != null ? emp.department.name : 'No Dept'}) + ' - ' + ${emp.employmentType.displayName} + ')'">
+                                        Jane Doe (EMP-001 - Engineering - Full Time)
+                                    </option>
+                                </select>
+                                <div class="invalid-feedback" th:if="${#fields.hasErrors('employeeId')}" th:errors="*{employeeId}">
+                                    Employee error
+                                </div>
+                            </div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label for="yearInput" class="form-label fw-semibold">Entitlement Year <span class="text-danger">*</span></label>
+                                    <input type="number"
+                                           id="yearInput"
+                                           th:field="*{leaveYear}"
+                                           class="form-control font-monospace"
+                                           th:classappend="${#fields.hasErrors('leaveYear')} ? 'is-invalid' : ''"
+                                           min="2000"
+                                           max="2100"
+                                           required>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('leaveYear')}" th:errors="*{leaveYear}">
+                                        Year error
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="leaveTypeSelect" class="form-label fw-semibold">Leave Type Scope</label>
+                                    <select id="leaveTypeSelect"
+                                            th:field="*{leaveTypeId}"
+                                            class="form-select">
+                                        <option value="">-- All Matching Active Leave Types --</option>
+                                        <option th:each="ltype : ${leaveTypes}"
+                                                th:value="${ltype.id}"
+                                                th:text="${ltype.name} + ' (' + ${ltype.code} + ')'">
+                                            Casual Leave (CL)
+                                        </option>
+                                    </select>
+                                    <small class="text-muted">Optionally target an individual category.</small>
+                                </div>
+                            </div>
+
+                            <div class="form-check form-switch mb-4">
+                                <input class="form-check-input" type="checkbox" id="includeCarryForward" th:field="*{includeCarryForward}">
+                                <label class="form-check-label fw-semibold" for="includeCarryForward">
+                                    Include Carry-Forward Rollover from Prior Year (Subject to policy max limits)
+                                </label>
+                            </div>
+
+                            <div class="alert alert-info border-start border-4 border-info small mb-4">
+                                <i class="bi bi-info-circle-fill me-1"></i>
+                                <strong>Policy Guard:</strong> Entitlement is derived strictly from active policies configured for the employee's department and employment type. Duplicate grants for the same period are prevented via unique idempotency ledger constraints.
+                            </div>
+
+                            <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                                <a href="/leave-balances" class="btn btn-outline-secondary">Cancel</a>
+                                <button type="submit" class="btn btn-primary px-4 fw-semibold">
+                                    <i class="bi bi-check2-circle me-1"></i> Execute Entitlement Grant
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white-50 py-3 mt-auto">
+        <div class="container text-center">
+            <small>Employee Leave &amp; Workforce Availability Planning Platform &bull; Phase 4</small>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
