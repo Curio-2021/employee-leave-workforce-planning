@@ -1,6 +1,6 @@
 # WorkforcePlan: Employee Leave & Workforce Availability Planning Platform
 
-> **BE CSE Major Project** &bull; A production-structured human capital and operational capacity planning platform engineered with **Java 21**, **Spring Boot 4.0.8**, **Spring Security 7.0.7** (via `spring-boot-starter-security` and `thymeleaf-extras-springsecurity6`), **Spring Data JPA / Hibernate 7**, **Thymeleaf 3**, **Bootstrap 5.3**, and **MySQL 8.0**.
+> A production-structured human capital and operational capacity planning platform engineered with **Java 21**, **Spring Boot 4.0.8**, **Spring Security 7.0.7** (via `spring-boot-starter-security` and `thymeleaf-extras-springsecurity6`), **Spring Data JPA / Hibernate 7**, **Thymeleaf 3**, **Bootstrap 5.3**, and **MySQL 8.0**.
 
 ---
 
